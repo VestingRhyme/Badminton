@@ -46,11 +46,11 @@
         </div>
 
         <div id="tournaments" class="tab-content">
-            <h2>Past Tournaments</h2>
-            <div id="tournamentsList">
-                <!-- Tournaments will be loaded here -->
+            <h2>Tournaments</h2>
+            <div id="playerTournaments">
+                <!-- Tournaments will be dynamically injected here -->
             </div>
-        </div>
+        </div>        
         
         <div id="league" class="tab-content">
             <h2>Past League Matches</h2>
@@ -68,10 +68,44 @@
         document.addEventListener('DOMContentLoaded', function () {
             const params = new URLSearchParams(window.location.search);
             const playerName = params.get('player');
+            const tournaments = JSON.parse(localStorage.getItem('tournaments')) || [];
+
             if (playerName) {
                 document.getElementById('playerNameHeader').textContent = decodeURIComponent(playerName);
+                loadPlayerTournaments(decodeURIComponent(playerName), tournaments);
             }
         });
+
+        function loadPlayerTournaments(playerName, tournaments) {
+            const playerTournamentsDiv = document.getElementById('playerTournaments');
+            playerTournamentsDiv.innerHTML = '';
+
+            const playerTournaments = tournaments.filter(tournament => tournament.players.includes(playerName));
+
+            if (playerTournaments.length > 0) {
+                playerTournaments.forEach(tournament => {
+                    const tournamentBox = document.createElement('div');
+                    tournamentBox.classList.add('tournament-box');
+
+                    const tournamentLink = document.createElement('a');
+                    tournamentLink.href = `tournament-profile.html?tournament=${encodeURIComponent(tournament.name)}`;
+                    tournamentLink.textContent = tournament.name;
+                    tournamentLink.className = 'tournament-link';
+
+                    const tournamentDetails = document.createElement('p');
+                    tournamentDetails.innerHTML = `
+                        <strong>Location:</strong> ${tournament.location || 'Unknown'}<br>
+                        <strong>Date:</strong> ${tournament.date || 'Unknown'}
+                    `;
+
+                    tournamentBox.appendChild(tournamentLink);
+                    tournamentBox.appendChild(tournamentDetails);
+                    playerTournamentsDiv.appendChild(tournamentBox);
+                });
+            } else {
+                playerTournamentsDiv.innerHTML = '<p>No tournaments linked to this player.</p>';
+            }
+        }
 
     </script>
 
