@@ -5,16 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Draw Profile</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* Override link colors for matches */
-        #matchesTable a {
-            color: black;
-            text-decoration: none;
-        }
-        #matchesTable a:hover {
-            text-decoration: underline;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -49,25 +39,21 @@
 
             if (!tournament || !tournament.draws) {
                 alert('Invalid tournament or draw');
-                window.location.href = 'tournament-profile.html';
                 return;
             }
 
             const draw = tournament.draws.find(d => d.name === drawName);
             if (!draw) {
                 alert('Draw not found');
-                window.location.href = 'tournament-profile.html';
                 return;
             }
 
             document.getElementById('drawNameHeader').textContent = drawName;
             document.getElementById('tournamentName').textContent = tournamentName;
-            document.getElementById('backToTournament').href = `tournament-profile.html?tournament=${encodeURIComponent(tournamentName)}`;
 
             const drawPlayersList = document.getElementById('drawPlayersList');
             const matchesTableBody = document.getElementById('matchesTableBody');
 
-            // Populate players
             if (draw.players.length > 0) {
                 draw.players.forEach(player => {
                     const listItem = document.createElement('li');
@@ -82,25 +68,19 @@
                 drawPlayersList.innerHTML = '<p>No players in this draw.</p>';
             }
 
-            // Populate matches
             if (draw.matches.length > 0) {
-                matchesTableBody.innerHTML = ''; // Clear previous matches
+                matchesTableBody.innerHTML = ''; 
                 draw.matches.forEach(match => {
                     const row = document.createElement('tr');
-
-                    // Match column
                     const matchCell = document.createElement('td');
                     matchCell.innerHTML = `
                         <a href="profile.html?player=${encodeURIComponent(match.team1)}" target="_blank">${match.team1}</a> - 
                         <a href="profile.html?player=${encodeURIComponent(match.team2)}" target="_blank">${match.team2}</a>
                     `;
-                    row.appendChild(matchCell);
-
-                    // Score column
                     const scoreCell = document.createElement('td');
-                    scoreCell.textContent = match.score ? match.score : '';
+                    scoreCell.textContent = match.score || "";
+                    row.appendChild(matchCell);
                     row.appendChild(scoreCell);
-
                     matchesTableBody.appendChild(row);
                 });
             } else {
