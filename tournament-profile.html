@@ -136,32 +136,13 @@
 
             function displayFinale() {
                 const finaleSection = document.getElementById('finaleSection');
-                if (tournament.publishedFinale && tournament.finale) {
-                    const finalePlayers = document.getElementById('finalePlayers');
-                    const score = tournament.finale.score;
-
-                    if (!score) {
-                        // No score, display only player names with larger font
-                        finalePlayers.innerHTML = `
-                            <span style="font-size: 1.5em; font-weight: bold;">
-                                <a href="profile.html?player=${encodeURIComponent(tournament.finale.player1)}" target="_blank">${tournament.finale.player1}</a> 
-                                vs 
-                                <a href="profile.html?player=${encodeURIComponent(tournament.finale.player2)}" target="_blank">${tournament.finale.player2}</a>
-                            </span>
-                        `;
-                    } else {
-                        // Score exists, display players with the score below
-                        finalePlayers.innerHTML = `
-                            <span style="font-size: 1.5em; font-weight: bold;">
-                                <a href="profile.html?player=${encodeURIComponent(tournament.finale.player1)}" target="_blank">${tournament.finale.player1}</a> 
-                                vs 
-                                <a href="profile.html?player=${encodeURIComponent(tournament.finale.player2)}" target="_blank">${tournament.finale.player2}</a>
-                            </span>
-                            <br>
-                            <strong>Score:</strong> ${score}
-                        `;
-                    }
+                if (tournament.finale) {
                     finaleSection.style.display = 'block';
+                    document.getElementById('finalePlayers').innerHTML = `
+                        <strong>${tournament.finale.player1}</strong> vs 
+                        <strong>${tournament.finale.player2}</strong><br>
+                        <strong>Score:</strong> ${tournament.finale.score || 'TBD'}
+                    `;
                 } else {
                     finaleSection.style.display = 'none';
                 }
