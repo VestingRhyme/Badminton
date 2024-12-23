@@ -19,7 +19,7 @@
         <h2>Players</h2>
         <input type="text" id="playerNameInput" placeholder="Add player name">
         <button id="addPlayerButton">Add Player</button>
-        <ul id="tournamentPlayersList"></ul>
+        <ul id="tournamentPlayersList" style="display: flex; flex-wrap: wrap; gap: 20px;"></ul>
 
         <h2>Seed Players</h2>
         <form id="editSeedForm">
@@ -37,7 +37,7 @@
             <label for="drawName">Draw Name:</label>
             <input type="text" id="drawName" placeholder="Enter draw name">
             <label for="drawPlayers">Select Players:</label>
-            <select id="drawPlayers" multiple></select>
+            <select id="drawPlayers" single></select>
             <button type="submit">Create Draw</button>
         </form>
         <ul id="drawList"></ul>
@@ -163,7 +163,7 @@
                 tournament.draws.forEach((draw, index) => {
                     const listItem = document.createElement('li');
                     const drawLink = document.createElement('a');
-                    drawLink.href = `draw-profile.html?draw=${encodeURIComponent(draw.name)}&tournament=${encodeURIComponent(tournamentName)}`;
+                    drawLink.href = `draw-admin.html?draw=${encodeURIComponent(draw.name)}&tournament=${encodeURIComponent(tournamentName)}`;
                     drawLink.textContent = draw.name;
                     drawLink.target = '_blank';
 
