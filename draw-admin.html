@@ -35,7 +35,7 @@
             const drawName = urlParams.get('draw');
             const tournamentName = urlParams.get('tournament');
 
-            const tournaments = JSON.parse(localStorage.getItem('tournaments')) || [];
+            let tournaments = JSON.parse(localStorage.getItem('tournaments')) || [];
             const tournament = tournaments.find(t => t.name === tournamentName);
 
             if (!tournament || !drawName) {
@@ -60,6 +60,110 @@
             const addPlayerButton = document.getElementById('addPlayerButton');
             const roundRobinTable = document.getElementById('roundRobinTable');
 
+            function saveDrawChanges() {
+                const tournamentIndex = tournaments.findIndex(t => t.name === tournamentName);
+                if (tournamentIndex !== -1) {
+                    tournaments[tournamentIndex].draws = tournaments[tournamentIndex].draws.map(d =>
+                        d.name === draw.name ? draw : d
+                    );
+                    localStorage.setItem('tournaments', JSON.stringify(tournaments));
+                    console.log("Updated tournaments in localStorage:", tournaments);
+                } else {
+                    console.error("Tournament not found during save.");
+                }
+            }
+
+            function editScore(team1, team2) {
+                const newScore = prompt(`Enter score for ${team1} vs ${team2} (e.g., 21-19):`);
+                if (newScore !== null) {
+                    const trimmedScore = newScore.trim();
+                    if (!/^\d+-\d+$/.test(trimmedScore)) {
+                        alert("Invalid score format. Please enter as '21-19'.");
+                        return;
+                    }
+
+                    const matchIndex = draw.matches.findIndex(m =>
+                        (m.team1 === team1 && m.team2 === team2) ||
+                        (m.team1 === team2 && m.team2 === team1)
+                    );
+
+                    if (matchIndex !== -1) {
+                        const previousScore = draw.matches[matchIndex].score;
+                        const [previousTeam1Score, previousTeam2Score] = previousScore ? previousScore.split('-').map(Number) : [null, null];
+                        const previousTeam1Wins = previousTeam1Score !== null && previousTeam1Score > previousTeam2Score;
+
+                        draw.matches[matchIndex].score = trimmedScore;
+
+                        const [team1Score, team2Score] = trimmedScore.split('-').map(Number);
+                        const team1Wins = team1Score > team2Score;
+
+                        updatePlayerStats(team1, team2, team1Wins, previousTeam1Wins);
+
+                        saveDrawChanges();
+                        generateRoundRobin();
+                    } else {
+                        console.error("Match not found for the provided teams.");
+                    }
+                } else {
+                    console.warn("No score input provided.");
+                }
+            }
+
+            function updatePlayerStats(team1, team2, team1Wins, previousTeam1Wins) {
+                const players = JSON.parse(localStorage.getItem('players')) || [];
+
+                const updateStats = (playerName, isWin, wasWin) => {
+                    let player = players.find(p => p.name === playerName);
+                    if (!player) {
+                        player = { name: playerName, totalGames: 0, gamesWon: 0, matches: [] };
+                        players.push(player);
+                    }
+                    if (!Array.isArray(player.matches)) {
+                        player.matches = []; // Ensure matches is initialized properly
+                    }
+
+                    if (wasWin !== null) {
+                        if (wasWin) {
+                            player.gamesWon -= 1;
+                        }
+                        player.totalGames -= 1;
+                    }
+
+                    player.totalGames += 1;
+                    if (isWin) {
+                        player.gamesWon += 1;
+                    }
+
+                    player.winPercentage = ((player.gamesWon / player.totalGames) * 100).toFixed(2);
+
+                    const existingMatch = player.matches.find(match =>
+                        match.opponent === (playerName === team1 ? team2 : team1) &&
+                        match.tournament === tournamentName &&
+                        match.draw === drawName
+                    );
+
+                    if (existingMatch) {
+                        existingMatch.result = isWin ? "Win" : "Loss";
+                        existingMatch.score = draw.matches.find(m => m.team1 === team1 && m.team2 === team2)?.score || "Unknown";
+                        existingMatch.date = new Date().toISOString();
+                    } else {
+                        player.matches.push({
+                            opponent: playerName === team1 ? team2 : team1,
+                            result: isWin ? "Win" : "Loss",
+                            score: draw.matches.find(m => m.team1 === team1 && m.team2 === team2)?.score || "Unknown",
+                            tournament: tournamentName,
+                            draw: drawName,
+                            date: new Date().toISOString(),
+                        });
+                    }
+                };
+
+                updateStats(team1, team1Wins, previousTeam1Wins);
+                updateStats(team2, !team1Wins, previousTeam1Wins === false);
+
+                localStorage.setItem('players', JSON.stringify(players));
+            }
+
             function displayPlayers() {
                 drawPlayersList.innerHTML = '';
                 if (draw.players.length > 0) {
@@ -79,7 +183,6 @@
                         listItem.appendChild(deleteButton);
                         drawPlayersList.appendChild(listItem);
 
-                        // Attach delete functionality
                         deleteButton.addEventListener('click', function () {
                             draw.players.splice(index, 1);
                             generateRoundRobinMatches();
@@ -96,7 +199,7 @@
                 draw.matches = [];
                 draw.players.forEach((player, i) => {
                     draw.players.forEach((opponent, j) => {
-                        if (i < j) { // Avoid duplicate match entries
+                        if (i < j) {
                             draw.matches.push({ team1: player, team2: opponent, score: null });
                         }
                     });
@@ -121,7 +224,6 @@
                     roundRobinTable.querySelector('tbody').appendChild(row);
                 });
 
-                // Attach event listeners for the Edit Score buttons
                 roundRobinTable.querySelectorAll('button').forEach(button => {
                     button.addEventListener('click', function () {
                         const team1 = this.dataset.team1;
@@ -129,28 +231,6 @@
                         editScore(team1, team2);
                     });
                 });
-            }
-
-            function editScore(team1, team2) {
-                const newScore = prompt(`Enter score for ${team1} vs ${team2}:`);
-                if (newScore) {
-                    let match = draw.matches.find(m => (m.team1 === team1 && m.team2 === team2) || (m.team1 === team2 && m.team2 === team1));
-                    if (!match) {
-                        match = { team1, team2, score: '' };
-                        draw.matches.push(match);
-                    }
-                    match.score = newScore;
-                    generateRoundRobin();
-                    saveDrawChanges();
-                }
-            }
-
-            function saveDrawChanges() {
-                const tournamentIndex = tournaments.findIndex(t => t.name === tournamentName);
-                if (tournamentIndex !== -1) {
-                    tournaments[tournamentIndex] = tournament;
-                    localStorage.setItem('tournaments', JSON.stringify(tournaments));
-                }
             }
 
             addPlayerButton.addEventListener('click', function () {
@@ -167,7 +247,7 @@
             });
 
             displayPlayers();
-            generateRoundRobinMatches();
+            generateRoundRobin();
         });
     </script>
 </body>
